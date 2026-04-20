@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { MOODS, type Mood } from '@/lib/mood';
 import { MOOD_CONFIG } from '@/lib/moodConfig';
 import {
@@ -274,6 +274,18 @@ function MoodCard({ mood, onSelect, isExpanding, isSelected }: MoodCardProps) {
 function ExpandingCard({ mood, onComplete }: { mood: Mood; onComplete: () => void }) {
   const config = MOOD_CONFIG[mood];
   const BgComponent = BG_MAP[mood];
+  const calledRef = useRef(false);
+
+  // Auto-complete after 1s regardless of animation state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!calledRef.current) {
+        calledRef.current = true;
+        onComplete();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
 
   return (
     <motion.div
@@ -282,18 +294,16 @@ function ExpandingCard({ mood, onComplete }: { mood: Mood; onComplete: () => voi
       style={{ background: CARD_GRADIENTS[mood] }}
       transition={{
         type: 'spring',
-        stiffness: 80,
-        damping: 18,
-        duration: 0.8,
+        stiffness: 120,
+        damping: 20,
       }}
-      onAnimationComplete={onComplete}
     >
       <BgComponent />
       <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          transition={{ delay: 0.25, duration: 0.4 }}
           className="text-center"
         >
           <div className="text-7xl mb-4">{config.emoji}</div>

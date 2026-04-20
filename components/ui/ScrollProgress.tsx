@@ -1,32 +1,30 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { motion, useScroll, useSpring } from 'framer-motion';
 
 export default function ScrollProgress() {
-  const barRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const bar = barRef.current;
-    if (!bar) return;
-
-    const updateProgress = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? scrollTop / docHeight : 0;
-      bar.style.transform = `scaleX(${progress})`;
-    };
-
-    window.addEventListener('scroll', updateProgress, { passive: true });
-    updateProgress();
-    return () => window.removeEventListener('scroll', updateProgress);
-  }, []);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
 
   return (
-    <div
-      ref={barRef}
+    <motion.div
       id="scroll-progress"
       aria-hidden="true"
-      style={{ width: '100%', transformOrigin: 'left', transform: 'scaleX(0)' }}
+      style={{
+        scaleX,
+        transformOrigin: 'left',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '2px',
+        background: 'linear-gradient(90deg, var(--accent), var(--accent-glow))',
+        zIndex: 9999,
+      }}
     />
   );
 }

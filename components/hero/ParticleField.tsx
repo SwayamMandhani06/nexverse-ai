@@ -1,75 +1,125 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Particles, { initParticlesEngine } from '@tsparticles/react';
+import { loadSlim } from '@tsparticles/slim';
+import type { ISourceOptions } from '@tsparticles/engine';
 import { useCurrentMood } from '@/store/useMoodStore';
 import { MOOD_CONFIG } from '@/lib/moodConfig';
+import type { Mood } from '@/lib/mood';
 
+/* ── Per-mood tsParticles config builders ── */
+function buildOptions(mood: Mood): ISourceOptions {
+  const cfg = MOOD_CONFIG[mood].particleConfig;
+
+  // Focused: blank canvas
+  if (mood === 'focused') {
+    return {
+      fullScreen: { enable: false },
+      particles: { number: { value: 0 } },
+    };
+  }
+
+  return {
+    fullScreen: { enable: false },
+    fpsLimit: 60,
+    background: { color: { value: 'transparent' } },
+    particles: {
+      number: {
+        value: cfg.count,
+        density: { enable: true },
+      },
+      color: { value: cfg.color },
+      opacity: {
+        value: { min: 0.05, max: Math.min(cfg.opacity, 0.4) },
+        animation: {
+          enable: true,
+          speed: 0.5,
+          sync: false,
+          startValue: 'random' as const,
+        },
+      },
+      size: {
+        value: { min: cfg.size * 0.5, max: cfg.size * 1.5 },
+      },
+      shape: {
+        type: mood === 'happy' ? 'star' : 'circle',
+      },
+      move: {
+        enable: true,
+        speed: cfg.speed,
+        direction: mood === 'tired' ? ('top' as const) : ('none' as const),
+        random: true,
+        straight: false,
+        outModes: { default: 'out' as const },
+      },
+      links: {
+        enable: mood === 'energetic',
+        distance: 120,
+        color: cfg.color,
+        opacity: 0.2,
+        width: 1,
+      },
+      ...(mood === 'calm' && { size: { value: { min: 2, max: 5 } } }),
+    },
+    interactivity: {
+      events: {
+        onHover: { enable: false },
+        onClick: { enable: false },
+      },
+    },
+    detectRetina: true,
+  };
+}
+
+/* ────────────────────────────────────────── */
 export default function ParticleField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const mood = useCurrentMood();
-  const config = MOOD_CONFIG[mood].particleConfig;
-  const animRef = useRef<number>(0);
+  const [engineReady, setEngineReady] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
 
+  // Init engine once on mount
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    initParticlesEngine(async (engine) => {
+      await loadSlim(engine);
+    }).then(() => {
+      setEngineReady(true);
+    });
+  }, []);
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles: Array<{
-      x: number; y: number; size: number; speedX: number; speedY: number; opacity: number;
-    }> = [];
-
-    for (let i = 0; i < config.count; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: config.size * (0.5 + Math.random()),
-        speedX: (Math.random() - 0.5) * config.speed * 0.5,
-        speedY: -Math.random() * config.speed,
-        opacity: Math.random() * config.opacity,
-      });
+  // Re-key on mood change to reinitialise particle config
+  useEffect(() => {
+    if (engineReady) {
+      setRenderKey((k) => k + 1);
     }
+  }, [mood, engineReady]);
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = config.color;
-        ctx.globalAlpha = p.opacity;
-        ctx.fill();
-        p.x += p.speedX;
-        p.y += p.speedY;
-        if (p.y < -10) { p.y = canvas.height + 10; }
-        if (p.x < 0) { p.x = canvas.width; }
-        if (p.x > canvas.width) { p.x = 0; }
-      });
-      ctx.globalAlpha = 1;
-      animRef.current = requestAnimationFrame(draw);
-    };
-    animRef.current = requestAnimationFrame(draw);
+  // Also listen to custom 'moodchange' event
+  useEffect(() => {
+    const handler = () => setRenderKey((k) => k + 1);
+    window.addEventListener('moodchange', handler);
+    return () => window.removeEventListener('moodchange', handler);
+  }, []);
 
-    const onResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', onResize);
+  const particlesLoaded = useCallback(async () => {
+    // no-op — hook required but we don't need it
+  }, []);
 
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      window.removeEventListener('resize', onResize);
-    };
-  }, [mood, config]);
+  if (!engineReady) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
+    <div
       aria-hidden="true"
-    />
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 0 }}
+    >
+      <Particles
+        key={renderKey}
+        id={`nexverse-particles-${renderKey}`}
+        options={buildOptions(mood)}
+        particlesLoaded={particlesLoaded}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      />
+    </div>
   );
 }

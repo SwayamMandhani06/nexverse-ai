@@ -200,6 +200,16 @@
   100% { transform: translate(5%, -5%) scale(1.15); }
 }
 
+@keyframes hero-bounce {
+  0%, 100% { transform: translateY(0);   }
+  50%       { transform: translateY(8px); }
+}
+
+@keyframes magnetic-ripple {
+  0%   { width: 0;    height: 0;    opacity: 1; }
+  100% { width: 200px; height: 200px; opacity: 0; }
+}
+
 /* ══════════════════════════════════════════
    BASE STYLES
 ══════════════════════════════════════════ */
