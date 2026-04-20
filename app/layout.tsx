@@ -36,7 +36,7 @@ export default function RootLayout({
       data-mood="energetic"
       className={`${plusJakartaSans.variable} ${jetBrainsMono.variable}`}
     >
-      <body className="overflow-x-hidden">
+      <body className="relative overflow-x-hidden">
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>

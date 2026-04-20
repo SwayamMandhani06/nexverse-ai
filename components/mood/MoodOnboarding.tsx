@@ -209,30 +209,29 @@ interface MoodCardProps {
 function MoodCard({ mood, onSelect, isExpanding, isSelected }: MoodCardProps) {
   const config = MOOD_CONFIG[mood];
   const BgComponent = BG_MAP[mood];
+  const idleBorder = `${config.colors.accent}30`;
+  const activeBorder = `${config.colors.accent}80`;
+  const glowShadow = `0 0 32px ${config.colors.glow}55, 0 0 64px ${config.colors.accent}22`;
 
   return (
     <motion.div
       layoutId={`mood-card-${mood}`}
       variants={cardVariants}
-      whileHover={isExpanding ? {} : { scale: 1.04, y: -6 }}
+      animate={{
+        boxShadow: isSelected ? glowShadow : 'none',
+        borderColor: isSelected ? activeBorder : idleBorder,
+      }}
+      whileHover={isExpanding ? {} : { scale: 1.04, y: -6, boxShadow: glowShadow, borderColor: activeBorder }}
       whileTap={isExpanding ? {} : { scale: 0.97 }}
       onClick={() => !isExpanding && onSelect(mood)}
       data-cursor-hover
       className="relative overflow-hidden rounded-2xl cursor-pointer select-none"
       style={{
         background: CARD_GRADIENTS[mood],
-        border: `1px solid ${config.colors.accent}30`,
+        border: `1px solid ${idleBorder}`,
         minHeight: 200,
-        transition: 'box-shadow 0.35s ease, border-color 0.35s ease',
       }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 32px ${config.colors.glow}55, 0 0 64px ${config.colors.accent}22`;
-        (e.currentTarget as HTMLElement).style.borderColor = `${config.colors.accent}80`;
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-        (e.currentTarget as HTMLElement).style.borderColor = `${config.colors.accent}30`;
-      }}
+      transition={{ boxShadow: { duration: 0.35 }, borderColor: { duration: 0.35 } }}
       aria-label={`Select ${config.label} mood: ${config.description}`}
       role="button"
       tabIndex={0}

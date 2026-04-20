@@ -32,9 +32,15 @@ function CalmAmbient() {
   );
 }
 
+const ENERGETIC_PARTICLES = Array.from({ length: 30 }, (_, i) => ({
+  x: (i * 17) % 100,
+  delay: ((i * 13) % 120) / 10,
+  dur: 6 + ((i * 11) % 80) / 10,
+  size: 1 + ((i * 7) % 30) / 10,
+}));
+
 /* ─── Energetic: CSS particle field ─── */
 function EnergeticAmbient() {
-  const particles = Array.from({ length: 30 });
   return (
     <>
       <div
@@ -43,24 +49,20 @@ function EnergeticAmbient() {
           background: 'radial-gradient(ellipse at 20% 80%, rgba(124,58,237,0.08) 0%, transparent 60%)',
         }}
       />
-      {particles.map((_, i) => {
-        const x = Math.random() * 100;
-        const delay = Math.random() * 12;
-        const dur = 6 + Math.random() * 8;
-        const size = 1 + Math.random() * 3;
+      {ENERGETIC_PARTICLES.map((particle, i) => {
         return (
           <div
             key={i}
             className="absolute rounded-full"
             style={{
-              left: `${x}%`,
+              left: `${particle.x}%`,
               bottom: '-8px',
-              width: size,
-              height: size,
+              width: particle.size,
+              height: particle.size,
               background: i % 3 === 0 ? '#A78BFA' : i % 3 === 1 ? '#7C3AED' : '#C4B5FD',
               opacity: 0,
-              animation: `ambient-particle-rise ${dur}s linear ${delay}s infinite`,
-              boxShadow: `0 0 ${size * 3}px currentColor`,
+              animation: `ambient-particle-rise ${particle.dur}s linear ${particle.delay}s infinite`,
+              boxShadow: `0 0 ${particle.size * 3}px currentColor`,
             }}
           />
         );
